@@ -93,8 +93,26 @@ export function CategoriesPage() {
             <td className="whitespace-nowrap px-5 py-4">{category.itemCount}</td>
             <td className="whitespace-nowrap px-5 py-4">
               <div className="flex gap-2">
-                <Button aria-label={`Edit ${category.name}`} className="h-9 w-9 px-0" icon={<Pencil size={16} />} onClick={() => openEditModal(category)} variant="secondary" />
-                <Button aria-label={`Delete ${category.name}`} className="h-9 w-9 px-0" icon={<Trash2 size={16} />} onClick={() => handleDelete(category)} variant="danger" />
+                <Button
+                  aria-label={`Edit ${category.name}`}
+                  className="h-10 border-sky-200 bg-sky-50 px-3 text-sky-700 hover:bg-sky-100 focus-visible:ring-sky-500 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200 dark:hover:bg-sky-500/20"
+                  icon={<Pencil size={17} strokeWidth={2.4} />}
+                  onClick={() => openEditModal(category)}
+                  title={`Edit ${category.name}`}
+                  variant="secondary"
+                >
+                  Edit
+                </Button>
+                <Button
+                  aria-label={`Delete ${category.name}`}
+                  className="h-10 px-3"
+                  icon={<Trash2 size={17} strokeWidth={2.4} />}
+                  onClick={() => handleDelete(category)}
+                  title={`Delete ${category.name}`}
+                  variant="danger"
+                >
+                  Delete
+                </Button>
               </div>
             </td>
           </tr>
