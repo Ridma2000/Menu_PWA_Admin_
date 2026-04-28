@@ -1,4 +1,4 @@
-export type PageKey = 'dashboard' | 'menu-items' | 'categories' | 'orders' | 'settings'
+export type PageKey = 'dashboard' | 'menu-items' | 'categories' | 'settings'
 
 export type MenuTag = 'veg' | 'spicy' | 'popular'
 
@@ -16,26 +16,6 @@ export interface MenuItem {
   imageUrl: string
   tags: MenuTag[]
   available: boolean
-}
-
-export type OrderStatus = 'Pending' | 'Completed'
-
-export interface OrderLineItem {
-  menuItemId: string
-  name: string
-  quantity: number
-  price: number
-}
-
-export interface Order {
-  id: string
-  customerName: string
-  phone: string
-  items: OrderLineItem[]
-  total: number
-  status: OrderStatus
-  date: string
-  notes?: string
 }
 
 export interface RestaurantSettings {

@@ -55,7 +55,7 @@ export function AppShell({
         <div className="flex h-16 items-center justify-between border-b border-slate-200 px-5 dark:border-slate-800">
           <div>
             <p className="text-base font-semibold text-slate-950 dark:text-white">Menu PWA Admin</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Restaurant operations</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Menu content admin</p>
           </div>
           <Button aria-label="Close sidebar" className="h-9 w-9 px-0 md:hidden" icon={<X size={18} />} onClick={onCloseSidebar} variant="ghost" />
         </div>
@@ -97,7 +97,7 @@ export function AppShell({
             <Button aria-label="Open sidebar" className="h-10 w-10 px-0 md:hidden" icon={<Menu size={19} />} onClick={onOpenSidebar} variant="ghost" />
             <div className="min-w-0">
               <h1 className="truncate text-lg font-semibold text-slate-950 dark:text-white">{pageTitle}</h1>
-              <p className="hidden text-xs text-slate-500 sm:block dark:text-slate-400">Manage live menu content and simulated orders.</p>
+              <p className="hidden text-xs text-slate-500 sm:block dark:text-slate-400">Manage menu item details and categories.</p>
             </div>
           </div>
 

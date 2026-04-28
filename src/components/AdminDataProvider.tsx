@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { mockCategories, mockMenuItems, mockOrders, mockSettings } from '../data/mockData'
+import { mockCategories, mockMenuItems, mockSettings } from '../data/mockData'
 import { AdminDataContext } from '../hooks/adminDataContext'
 import type { AdminDataContextValue, MenuItemInput } from '../hooks/adminDataContext'
-import type { Category, MenuItem, Order, OrderStatus, RestaurantSettings } from '../types'
+import type { Category, MenuItem, RestaurantSettings } from '../types'
 
 const createId = (prefix: string) => {
   const randomId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -13,7 +13,6 @@ const createId = (prefix: string) => {
 export function AdminDataProvider({ children }: { children: ReactNode }) {
   const [categories, setCategories] = useState<Category[]>(mockCategories)
   const [menuItems, setMenuItems] = useState<MenuItem[]>(mockMenuItems)
-  const [orders, setOrders] = useState<Order[]>(mockOrders)
   const [settings, setSettings] = useState<RestaurantSettings>(mockSettings)
 
   const addMenuItem = (item: MenuItemInput) => {
@@ -62,10 +61,6 @@ export function AdminDataProvider({ children }: { children: ReactNode }) {
     )
   }
 
-  const updateOrderStatus = (id: string, status: OrderStatus) => {
-    setOrders((current) => current.map((order) => (order.id === id ? { ...order, status } : order)))
-  }
-
   const updateSettings = (nextSettings: RestaurantSettings) => {
     setSettings(nextSettings)
   }
@@ -73,7 +68,6 @@ export function AdminDataProvider({ children }: { children: ReactNode }) {
   const value: AdminDataContextValue = {
     categories,
     menuItems,
-    orders,
     settings,
     addMenuItem,
     updateMenuItem,
@@ -81,7 +75,6 @@ export function AdminDataProvider({ children }: { children: ReactNode }) {
     addCategory,
     updateCategory,
     deleteCategory,
-    updateOrderStatus,
     updateSettings,
   }
 

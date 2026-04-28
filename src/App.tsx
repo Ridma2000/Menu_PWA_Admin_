@@ -6,7 +6,6 @@ import { useDarkMode } from './hooks/useDarkMode'
 import { CategoriesPage } from './pages/CategoriesPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { MenuItemsPage } from './pages/MenuItemsPage'
-import { OrdersPage } from './pages/OrdersPage'
 import { SettingsPage } from './pages/SettingsPage'
 import type { PageKey } from './types'
 
@@ -16,8 +15,6 @@ function renderPage(page: PageKey) {
       return <CategoriesPage />
     case 'menu-items':
       return <MenuItemsPage />
-    case 'orders':
-      return <OrdersPage />
     case 'settings':
       return <SettingsPage />
     case 'dashboard':
