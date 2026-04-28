@@ -232,6 +232,18 @@ export function MenuItemsPage() {
     closeModal()
   }
 
+  const updateAvailability = (item: MenuItem, value: string) => {
+    updateMenuItem(item.id, {
+      available: value === 'available',
+      categoryId: item.categoryId,
+      description: item.description,
+      imageUrl: item.imageUrl,
+      name: item.name,
+      price: item.price,
+      tags: item.tags,
+    })
+  }
+
   const handleDelete = (item: MenuItem) => {
     if (window.confirm(`Delete "${item.name}" from the menu?`)) {
       deleteMenuItem(item.id)
@@ -305,15 +317,19 @@ export function MenuItemsPage() {
             <td className="whitespace-nowrap px-5 py-4">{categoryById.get(item.categoryId) ?? 'Uncategorized'}</td>
             <td className="whitespace-nowrap px-5 py-4 font-medium">{formatCurrency(item.price)}</td>
             <td className="whitespace-nowrap px-5 py-4">
-              <span
-                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+              <select
+                aria-label={`Availability for ${item.name}`}
+                className={`h-9 min-w-32 rounded-md border px-3 text-sm font-medium outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 ${
                   item.available
-                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300'
-                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300'
+                    : 'border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
                 }`}
+                onChange={(event) => updateAvailability(item, event.target.value)}
+                value={item.available ? 'available' : 'unavailable'}
               >
-                {item.available ? 'Available' : 'Unavailable'}
-              </span>
+                <option value="available">Available</option>
+                <option value="unavailable">Unavailable</option>
+              </select>
             </td>
             <td className="whitespace-nowrap px-5 py-4">
               <div className="flex gap-2">
