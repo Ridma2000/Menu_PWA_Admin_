@@ -78,6 +78,7 @@ export const mockMenuItems: MenuItem[] = [
 
 export const mockSettings: RestaurantSettings = {
   restaurantName: 'Harvest Table Bistro',
+  menuUrl: 'https://cita-menu.lovable.app/m/harvest-table-bistro',
   phoneNumber: '+1 555 0110',
   whatsappNumber: '+1 555 0111',
   address: '214 Market Street, San Francisco, CA',

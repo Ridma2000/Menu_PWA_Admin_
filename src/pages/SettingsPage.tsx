@@ -39,6 +39,13 @@ export function SettingsPage() {
             required
             value={form.restaurantName}
           />
+          <Input
+            label="Customer menu link"
+            onChange={(event) => updateField('menuUrl', event.target.value)}
+            required
+            type="url"
+            value={form.menuUrl}
+          />
           <Input label="Phone number" onChange={(event) => updateField('phoneNumber', event.target.value)} required value={form.phoneNumber} />
           <Input
             label="WhatsApp number"

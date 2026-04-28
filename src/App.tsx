@@ -7,6 +7,7 @@ import { CategoriesPage } from './pages/CategoriesPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { MenuItemsPage } from './pages/MenuItemsPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { SharePage } from './pages/SharePage'
 import type { PageKey } from './types'
 
 function renderPage(page: PageKey) {
@@ -15,6 +16,8 @@ function renderPage(page: PageKey) {
       return <CategoriesPage />
     case 'menu-items':
       return <MenuItemsPage />
+    case 'share':
+      return <SharePage />
     case 'settings':
       return <SettingsPage />
     case 'dashboard':

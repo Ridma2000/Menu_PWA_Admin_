@@ -1,6 +1,7 @@
 import {
   FolderTree,
   LayoutDashboard,
+  QrCode,
   Settings,
   Soup,
 } from 'lucide-react'
@@ -11,5 +12,6 @@ export const navItems: Array<{ icon: LucideIcon; key: PageKey; label: string }> 
   { icon: LayoutDashboard, key: 'dashboard', label: 'Dashboard' },
   { icon: Soup, key: 'menu-items', label: 'Menu Items' },
   { icon: FolderTree, key: 'categories', label: 'Categories' },
+  { icon: QrCode, key: 'share', label: 'Share Menu' },
   { icon: Settings, key: 'settings', label: 'Settings' },
 ]

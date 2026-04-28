@@ -1,4 +1,4 @@
-export type PageKey = 'dashboard' | 'menu-items' | 'categories' | 'settings'
+export type PageKey = 'dashboard' | 'menu-items' | 'categories' | 'share' | 'settings'
 
 export type MenuTag = 'veg' | 'spicy' | 'popular'
 
@@ -20,6 +20,7 @@ export interface MenuItem {
 
 export interface RestaurantSettings {
   restaurantName: string
+  menuUrl: string
   phoneNumber: string
   whatsappNumber: string
   address: string

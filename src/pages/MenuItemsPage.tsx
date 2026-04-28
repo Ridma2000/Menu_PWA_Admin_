@@ -1,5 +1,5 @@
-import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
-import { FormEvent, useMemo, useState } from 'react'
+import { Crop, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react'
+import { ChangeEvent, FormEvent, useMemo, useState } from 'react'
 import { Button } from '../components/Button'
 import { Input, Textarea } from '../components/Input'
 import { Modal } from '../components/Modal'
@@ -10,6 +10,7 @@ import type { MenuItem, MenuTag } from '../types'
 import { formatCurrency } from '../utils/format'
 
 type AvailabilityFilter = 'all' | 'available' | 'unavailable'
+type CropAspect = 'landscape' | 'square'
 
 interface ItemFormState {
   available: boolean
@@ -22,7 +23,19 @@ interface ItemFormState {
   tags: MenuTag[]
 }
 
+interface CropState {
+  aspect: CropAspect
+  offsetX: number
+  offsetY: number
+  source: string
+  zoom: number
+}
+
 const tagOptions: MenuTag[] = ['veg', 'spicy', 'popular']
+const cropDimensions: Record<CropAspect, { className: string; height: number; label: string; width: number }> = {
+  landscape: { className: 'aspect-[4/3]', height: 600, label: '4:3', width: 800 },
+  square: { className: 'aspect-square', height: 800, label: '1:1', width: 800 },
+}
 
 const emptyForm = (categoryId: string): ItemFormState => ({
   available: true,
@@ -34,10 +47,59 @@ const emptyForm = (categoryId: string): ItemFormState => ({
   tags: [],
 })
 
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
+
+const loadImage = (source: string) =>
+  new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image()
+
+    if (!source.startsWith('data:')) {
+      image.crossOrigin = 'anonymous'
+    }
+
+    image.onload = () => resolve(image)
+    image.onerror = reject
+    image.src = source
+  })
+
+const createCroppedImage = async ({ aspect, offsetX, offsetY, source, zoom }: CropState) => {
+  const image = await loadImage(source)
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+  const output = cropDimensions[aspect]
+
+  if (!context) {
+    throw new Error('Canvas is unavailable.')
+  }
+
+  const imageWidth = image.naturalWidth
+  const imageHeight = image.naturalHeight
+  const outputAspect = output.width / output.height
+  const baseCropWidth = imageWidth / imageHeight > outputAspect ? imageHeight * outputAspect : imageWidth
+  const baseCropHeight = baseCropWidth / outputAspect
+  const cropWidth = baseCropWidth / zoom
+  const cropHeight = baseCropHeight / zoom
+  const maxSourceX = Math.max(imageWidth - cropWidth, 0)
+  const maxSourceY = Math.max(imageHeight - cropHeight, 0)
+  const sourceX = clamp(maxSourceX / 2 + (offsetX / 100) * (maxSourceX / 2), 0, maxSourceX)
+  const sourceY = clamp(maxSourceY / 2 + (offsetY / 100) * (maxSourceY / 2), 0, maxSourceY)
+
+  canvas.width = output.width
+  canvas.height = output.height
+  context.fillStyle = '#ffffff'
+  context.fillRect(0, 0, output.width, output.height)
+  context.imageSmoothingEnabled = true
+  context.imageSmoothingQuality = 'high'
+  context.drawImage(image, sourceX, sourceY, cropWidth, cropHeight, 0, 0, output.width, output.height)
+
+  return canvas.toDataURL('image/jpeg', 0.9)
+}
+
 export function MenuItemsPage() {
   const { addMenuItem, categories, deleteMenuItem, menuItems, updateMenuItem } = useAdminData()
   const [availabilityFilter, setAvailabilityFilter] = useState<AvailabilityFilter>('all')
   const [categoryFilter, setCategoryFilter] = useState('all')
+  const [cropState, setCropState] = useState<CropState | null>(null)
   const [form, setForm] = useState<ItemFormState>(emptyForm(categories[0]?.id ?? ''))
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -61,10 +123,12 @@ export function MenuItemsPage() {
 
   const openCreateModal = () => {
     setForm(emptyForm(categories[0]?.id ?? ''))
+    setCropState(null)
     setIsModalOpen(true)
   }
 
   const openEditModal = (item: MenuItem) => {
+    setCropState(null)
     setForm({
       available: item.available,
       categoryId: item.categoryId,
@@ -79,6 +143,7 @@ export function MenuItemsPage() {
   }
 
   const closeModal = () => {
+    setCropState(null)
     setIsModalOpen(false)
   }
 
@@ -87,6 +152,58 @@ export function MenuItemsPage() {
       ...current,
       tags: current.tags.includes(tag) ? current.tags.filter((currentTag) => currentTag !== tag) : [...current.tags, tag],
     }))
+  }
+
+  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+
+    if (!file) {
+      return
+    }
+
+    if (!file.type.startsWith('image/')) {
+      window.alert('Please upload an image file.')
+      event.target.value = ''
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        const uploadedImage = reader.result
+
+        setForm((current) => ({ ...current, imageUrl: uploadedImage }))
+        setCropState({ aspect: 'landscape', offsetX: 0, offsetY: 0, source: uploadedImage, zoom: 1 })
+      }
+    }
+    reader.readAsDataURL(file)
+    event.target.value = ''
+  }
+
+  const openCropEditor = () => {
+    const imageUrl = form.imageUrl.trim()
+
+    if (!imageUrl) {
+      window.alert('Add or upload an image before cropping.')
+      return
+    }
+
+    setCropState({ aspect: 'landscape', offsetX: 0, offsetY: 0, source: imageUrl, zoom: 1 })
+  }
+
+  const applyCrop = async () => {
+    if (!cropState) {
+      return
+    }
+
+    try {
+      const croppedImage = await createCroppedImage(cropState)
+
+      setForm((current) => ({ ...current, imageUrl: croppedImage }))
+      setCropState(null)
+    } catch {
+      window.alert('This image cannot be cropped in the browser. Upload the image file directly, then crop it.')
+    }
   }
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -278,13 +395,139 @@ export function MenuItemsPage() {
             />
             <Input
               label="Image URL"
-              onChange={(event) => setForm((current) => ({ ...current, imageUrl: event.target.value }))}
+              onChange={(event) => {
+                setForm((current) => ({ ...current, imageUrl: event.target.value }))
+                setCropState(null)
+              }}
               placeholder="https://..."
               required
-              type="url"
               value={form.imageUrl}
             />
           </div>
+          <div className="grid gap-4 md:grid-cols-[180px_1fr]">
+            <div>
+              <p className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Preview</p>
+              {form.imageUrl ? (
+                <img
+                  alt={form.name ? `${form.name} preview` : 'Food item preview'}
+                  className="h-32 w-full rounded-md border border-slate-200 object-cover dark:border-slate-700"
+                  src={form.imageUrl}
+                />
+              ) : (
+                <div className="flex h-32 items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+                  No image
+                </div>
+              )}
+            </div>
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Upload food image</span>
+              <input accept="image/*" className="sr-only" onChange={handleImageUpload} type="file" />
+              <span className="flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 text-center text-sm font-medium text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-emerald-500 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-300">
+                <Upload size={20} />
+                Choose Image
+                <span className="text-xs font-normal text-slate-500 dark:text-slate-400">JPG, PNG, WEBP, or GIF</span>
+              </span>
+            </label>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button disabled={!form.imageUrl.trim()} icon={<Crop size={17} />} onClick={openCropEditor} variant="secondary">
+              Crop Image
+            </Button>
+          </div>
+          {cropState ? (
+            <div className="space-y-4 rounded-md border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900">
+              <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
+                <div
+                  className={`relative overflow-hidden rounded-md border border-slate-200 bg-slate-950 ${cropDimensions[cropState.aspect].className} dark:border-slate-700`}
+                >
+                  <img
+                    alt="Crop preview"
+                    className="absolute inset-0 h-full w-full object-cover"
+                    src={cropState.source}
+                    style={{
+                      objectPosition: `${50 + cropState.offsetX / 2}% ${50 + cropState.offsetY / 2}%`,
+                      transform: `scale(${cropState.zoom})`,
+                    }}
+                  />
+                  <div className="pointer-events-none absolute inset-0 border-2 border-white/80 shadow-[inset_0_0_0_9999px_rgba(15,23,42,0.08)]" />
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">Crop ratio</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(Object.keys(cropDimensions) as CropAspect[]).map((aspect) => (
+                        <button
+                          className={`rounded-md border px-3 py-2 text-sm font-medium transition ${
+                            cropState.aspect === aspect
+                              ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300'
+                              : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300'
+                          }`}
+                          key={aspect}
+                          onClick={() => setCropState((current) => (current ? { ...current, aspect } : current))}
+                          type="button"
+                        >
+                          {cropDimensions[aspect].label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Zoom</span>
+                    <input
+                      className="w-full accent-emerald-600"
+                      max="3"
+                      min="1"
+                      onChange={(event) =>
+                        setCropState((current) => (current ? { ...current, zoom: Number(event.target.value) } : current))
+                      }
+                      step="0.05"
+                      type="range"
+                      value={cropState.zoom}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Horizontal position</span>
+                    <input
+                      className="w-full accent-emerald-600"
+                      max="100"
+                      min="-100"
+                      onChange={(event) =>
+                        setCropState((current) => (current ? { ...current, offsetX: Number(event.target.value) } : current))
+                      }
+                      step="1"
+                      type="range"
+                      value={cropState.offsetX}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Vertical position</span>
+                    <input
+                      className="w-full accent-emerald-600"
+                      max="100"
+                      min="-100"
+                      onChange={(event) =>
+                        setCropState((current) => (current ? { ...current, offsetY: Number(event.target.value) } : current))
+                      }
+                      step="1"
+                      type="range"
+                      value={cropState.offsetY}
+                    />
+                  </label>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <Button
+                  onClick={() => setCropState((current) => (current ? { ...current, offsetX: 0, offsetY: 0, zoom: 1 } : current))}
+                  variant="secondary"
+                >
+                  Reset Crop
+                </Button>
+                <Button onClick={applyCrop} type="button">
+                  Apply Crop
+                </Button>
+              </div>
+            </div>
+          ) : null}
           <div>
             <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">Tags</p>
             <div className="flex flex-wrap gap-2">
